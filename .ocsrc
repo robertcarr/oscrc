@@ -1,0 +1,116 @@
+# Unified rc file for working with OCS
+# Can be used on multiple node types without harm.
+# load through ~/.bash_aliases or ~/.bashrc
+#
+
+#TODO: Read this from site.conf
+export OCS_SSH_PORT=3223
+
+#
+export OCS_CRED_DIRECTORY=/var/tmp/creds
+export OCS_BIN=/srv/substratum/services/bin
+export OCS_SITE_DIR=/etc/substratum
+export OCS_CHEF_DIR=/etc/chef
+
+# Builds a list of aliases so you can quickly jumpbox to any node via hostname
+function jumpbox_aliases {
+  for host in `substratum machine list | awk '{ print $2; }'`
+    do 
+      alias jump_$host="ssh jumpbox@$host -p$OCS_SSH_PORT"
+    done
+}
+
+# OCS ZM Specific.
+
+if [ -d "$OCS_BIN" ]; then
+  alias ocs_versions='dpkg -l | grep substratum'
+  alias ssml='substratum machine list'
+  alias ssze='substratum zone edit'
+  alias ssdl='substratum deployment list'
+  alias ssrestart='restart substratum-services'
+  alias ssreimage='substratum machine reimage'
+  jumpbox_aliases
+fi
+
+# Chef converged nodes: c,s,q,etc
+if [ -d "$OCS_CHEF_DIR" ]; then
+  alias ocs-metadata-dump='curl --silent `grep json_attribs /etc/chef/solo.rb | cut -d " " -f2 | tr -d \"` | python -mjson.tool | tee metadata.json'
+  alias ocs-metadata-grep='metadata_dump | grep '
+  alias ocs-metadata-edit='metadata_dump ; vim metadata.json'
+  alias ocs-firstboot='less /var/log/firstboot.log'
+fi
+
+# Add chef logs
+
+
+# Megaraid info
+#TODO: add check for Megaraid binary first
+export PATH=$PATH:/opt/MegaRAID/MegaCli
+alias mr='MegaCli64'
+alias mega-config-display-all='mr -CfgDsply -aAll'
+alias mega-drive-info='mr -LdPdInfo -aAll'
+alias mega-controller-count='mr -AdpCount'
+alias mega-enclosure-info='mr -EncInfo -aAll'
+alias mega-enclosure-status='mr -EncStatus -aAll'
+alias mega-drive-list='mr -PDList -aAll'
+alias mega-get-missing-drives='mr -PdGetMissing -aAll'
+alias mega-virtual-drive-info='mr -LDInfo -Lall -aAll'
+
+# Keystone Commands to add users
+
+# Openstack commands 
+alias nova-sl='nova-manage service list'
+
+# Ec2 commands
+function terminate_all {
+instances=`euca-describe-instances | grep ^INSTANCE | awk '{print $2;}'`
+total=`echo $instances | wc -w`     
+echo "Terminating $total instances"
+for i in $instances; do euca-terminate-instances $i ; done
+}
+
+if [ -f "/usr/bin/euca-run-instances" ]; then
+  alias euca-di='euca-describe-instances'
+  alias euca-si='euca-describe-images'
+  alias euca-rt='euca-run-instances ami-000001 -k test'
+  alias euca-ri='euca-run-instances'
+  alias euca-ti='euca-terminate-instances'
+  alias euca-ta=terminate_all
+  alias euca-show-running='euca-di | grep INSTANCE | grep running'
+  alias euca-show-not-running='euca-di | grep INSTANCE | grep -v -i running'
+fi
+
+# l3addnet?
+
+# cs-scheduler-db
+function scheduler_add_all {
+scheduler='/usr/local/bin/cs-scheduler-db.py'
+if [ -f "$scheduler" ]; then
+  types=`$scheduler types`
+    if [ ! -z "$types" ]; then
+      for type in $types; do
+        $scheduler add $1 $type
+      done
+    else
+      echo "No types found. Exiting"
+    fi
+else
+    echo "$scheduler not found!"
+fi
+
+}
+
+alias ocs-scheduler-add-all="scheduler_add_all $1"
+
+# Useful
+## send ssh command to a machine.
+
+# tail logs
+alias tailfMessages='tailf /var/log/messages'
+alias tailfNovaNetwork='tailf /var/log/nova/nova-network.log'
+
+# vimrc
+
+
+
+
