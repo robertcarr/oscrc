@@ -66,6 +66,26 @@ echo "Terminating $total instances"
 for i in $instances; do euca-terminate-instances $i ; done
 }
 
+# Add a new keystone user
+function add_keystone_user {
+  USER=$1
+  PASS=$2
+  TENANT=$3
+
+if ! [[ -z "$USER" || -z "$PASS" || -z "$TENANT" ]]; then
+
+  TENANT_UUID=`keystone tenant-list | grep $TENANT | awk '{print $2;}'`
+  if [ -z "$TENANT_UUID" ]; then
+    echo "No tenant $TENANT found!"
+  else
+    keystone user-create --name $USER --tenant-id $TENANT_ID --pass $PASS
+  fi
+
+else
+  echo "Empty values for User, Password or Tenant name"
+fi
+}
+
 # If we're a znode w/OSAPI, Keystone & EC2 Tools
 if [ -f "/usr/bin/nova" ]; then
   # Ec2 commands
@@ -83,7 +103,10 @@ if [ -f "/usr/bin/nova" ]; then
   alias tailfNovaNetwork='tailf /var/log/nova/nova-network.log'
 
   # Keystone Commands to add users
+  alias ocs-create-tenant="keystone tenant-create --name "
+  alias ocs-create-user=add_keystone_user
 fi
+
 
 # l3addnet?
 
