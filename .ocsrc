@@ -44,24 +44,21 @@ fi
 
 
 # Megaraid info
-#TODO: add check for Megaraid binary first
-export PATH=$PATH:/opt/MegaRAID/MegaCli
-alias mr='MegaCli64'
-alias mega-config-display-all='mr -CfgDsply -aAll'
-alias mega-drive-info='mr -LdPdInfo -aAll'
-alias mega-controller-count='mr -AdpCount'
-alias mega-enclosure-info='mr -EncInfo -aAll'
-alias mega-enclosure-status='mr -EncStatus -aAll'
-alias mega-drive-list='mr -PDList -aAll'
-alias mega-get-missing-drives='mr -PdGetMissing -aAll'
-alias mega-virtual-drive-info='mr -LDInfo -Lall -aAll'
+if [ -f "/opt/MegaRaid/MegaCli/MegaCli64" ]; then
+  export PATH=$PATH:/opt/MegaRAID/MegaCli
+  alias mr='MegaCli64'
+  alias mega-config-display-all='mr -CfgDsply -aAll'
+  alias mega-drive-info='mr -LdPdInfo -aAll'
+  alias mega-controller-count='mr -AdpCount'
+  alias mega-enclosure-info='mr -EncInfo -aAll'
+  alias mega-enclosure-status='mr -EncStatus -aAll'
+  alias mega-drive-list='mr -PDList -aAll'
+  alias mega-get-missing-drives='mr -PdGetMissing -aAll'
+  alias mega-virtual-drive-info='mr -LDInfo -Lall -aAll'
+fi
 
-# Keystone Commands to add users
 
-# Openstack commands 
-alias nova-sl='nova-manage service list'
-
-# Ec2 commands
+# Znode commands: Ec2, OpenStack, Keystone
 function terminate_all {
 instances=`euca-describe-instances | grep ^INSTANCE | awk '{print $2;}'`
 total=`echo $instances | wc -w`     
@@ -69,7 +66,9 @@ echo "Terminating $total instances"
 for i in $instances; do euca-terminate-instances $i ; done
 }
 
-if [ -f "/usr/bin/euca-run-instances" ]; then
+# If we're a znode w/OSAPI, Keystone & EC2 Tools
+if [ -f "/usr/bin/nova" ]; then
+  # Ec2 commands
   alias euca-di='euca-describe-instances'
   alias euca-si='euca-describe-images'
   alias euca-rt='euca-run-instances ami-000001 -k test'
@@ -78,6 +77,12 @@ if [ -f "/usr/bin/euca-run-instances" ]; then
   alias euca-ta=terminate_all
   alias euca-show-running='euca-di | grep INSTANCE | grep running'
   alias euca-show-not-running='euca-di | grep INSTANCE | grep -v -i running'
+
+  # Nova commands
+  alias nova-sl='nova-manage service list'
+  alias tailfNovaNetwork='tailf /var/log/nova/nova-network.log'
+
+  # Keystone Commands to add users
 fi
 
 # l3addnet?
@@ -107,7 +112,6 @@ alias ocs-scheduler-add-all="scheduler_add_all $1"
 
 # tail logs
 alias tailfMessages='tailf /var/log/messages'
-alias tailfNovaNetwork='tailf /var/log/nova/nova-network.log'
 
 # vimrc
 
