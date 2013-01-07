@@ -42,7 +42,6 @@ fi
 
 # Add chef logs
 
-
 # Megaraid info
 if [ -f "/opt/MegaRaid/MegaCli/MegaCli64" ]; then
   export PATH=$PATH:/opt/MegaRAID/MegaCli
@@ -66,6 +65,7 @@ echo "Terminating $total instances"
 for i in $instances; do euca-terminate-instances $i ; done
 }
 
+
 # Add a new keystone user
 function add_keystone_user {
   USER=$1
@@ -87,16 +87,33 @@ fi
 }
 
 # If we're a znode w/OSAPI, Keystone & EC2 Tools
+function terminate_servers {
+if [ ! -z "$1" ]; then
+  servers=`euca-grep $1 | awk '{print $2;}'`
+fi
+total=`echo $servers | wc -w`
+if [ "$total" -ge 1 ]; then
+  echo -n "Servers found $total.  Terminate [y/N]?"
+  read ANS
+  if [ "$ANS" == "y" ]; then
+    for server in $servers; do
+      euca-terminate-instances $server
+   done
+  fi
+fi
+
+}
+
 if [ -f "/usr/bin/nova" ]; then
   # Ec2 commands
-  alias euca-di='euca-describe-instances'
-  alias euca-si='euca-describe-images'
+  alias euca-din='euca-describe-instances'
+  alias euca-dim='euca-describe-images'
   alias euca-rt='euca-run-instances ami-000001 -k test'
   alias euca-ri='euca-run-instances'
   alias euca-ti='euca-terminate-instances'
   alias euca-ta=terminate_all
-  alias euca-show-running='euca-di | grep INSTANCE | grep running'
-  alias euca-show-not-running='euca-di | grep INSTANCE | grep -v -i running'
+  alias euca-grep='euca-describe-instances | grep'
+  alias euca-grept=terminate_servers
 
   # Nova commands
   alias nova-sl='nova-manage service list'
